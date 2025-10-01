@@ -1,0 +1,90 @@
+---
+# roles/nazara/tasks/main.yml
+
+- name: Ensure Nazara config directory exists
+  file:
+    path: /root/.config/nazara
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Deploy Nazara config from template
+  template:
+    src: config.toml.j2
+    dest: /root/.config/nazara/config.toml
+    owner: root
+    group: root
+    mode: "0600"
+
+# -------------------------------------------------------------------
+# INSTALLATION VIA CARGO
+# -------------------------------------------------------------------
+
+- name: Ensure Rust and Cargo are installed (Debian/Ubuntu)
+  apt:
+    name: cargo
+    state: present
+  when: use_cargo | bool
+  tags: install
+
+- name: Install Nazara using cargo
+  command: cargo install --locked --force nazara --version {{ nazara_version }}
+  when: use_cargo | bool
+  tags: install
+
+# -------------------------------------------------------------------
+# INSTALLATION VIA GITHUB RELEASE (fallback if no cargo)
+# -------------------------------------------------------------------
+
+- name: Download Nazara release archive
+  get_url:
+    url: "https://github.com/your-org/nazara/releases/download/v{{ nazara_version }}/nazara-{{ nazara_version }}.tar.gz"
+    dest: "/tmp/nazara-{{ nazara_version }}.tar.gz"
+    mode: "0644"
+  when: not use_cargo | bool
+  tags: install
+
+- name: Extract Nazara release
+  unarchive:
+    src: "/tmp/nazara-{{ nazara_version }}.tar.gz"
+    dest: "/tmp/nazara-{{ nazara_version }}"
+    remote_src: yes
+  when: not use_cargo | bool
+  tags: install
+
+- name: Install Nazara binary into /usr/local/bin
+  copy:
+    src: "/tmp/nazara-{{ nazara_version }}/nazara"
+    dest: "/usr/local/bin/nazara"
+    mode: "0755"
+  when: not use_cargo | bool
+  tags: install
+
+# -------------------------------------------------------------------
+# RUNNING NAZARA
+# -------------------------------------------------------------------
+
+- name: Run Nazara
+  command: nazara
+  register: nazara_output
+
+- name: Show Nazara output
+  debug:
+    var: nazara_output.stdout
+
+# -------------------------------------------------------------------
+# CLEANUP TEMPORARY FILES (only relevant if not using cargo)
+# -------------------------------------------------------------------
+
+- name: Cleanup extracted Nazara directory
+  file:
+    path: "/tmp/nazara-{{ nazara_version }}"
+    state: absent
+  when: not use_cargo | bool
+
+- name: Cleanup Nazara release tarball
+  file:
+    path: "/tmp/nazara-{{ nazara_version }}.tar.gz"
+    state: absent
+  when: not use_cargo | bool

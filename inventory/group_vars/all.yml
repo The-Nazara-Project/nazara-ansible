@@ -1,0 +1,16 @@
+netbox_uri: "https://localhost:8080"
+netbox_api_token: "CHANGE_ME"
+
+# Common Settings
+nazara_type: "device"
+nazara_status: "active"
+nazara_description: "Provisioned via Nazara Ansible"
+nazara_comments: "Automatically registered via Nazara."
+
+# Device Settings
+device_type: 1
+device_role: 1
+device_site: 1
+
+# VM Settings
+vm_cluster: 1

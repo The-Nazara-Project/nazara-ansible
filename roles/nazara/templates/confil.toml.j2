@@ -1,0 +1,30 @@
+# Template nazara-config.toml file for v0.1.0-beta.2
+
+# Configuration parameters for the NetBox connection
+[netbox]
+netbox_api_token = "{{ netbox_api_token }}"
+netbox_uri = "{{ netbox_uri }}"
+
+# Common settings that always have to be provided.
+[common]
+# The name of the device/VM.
+name = "{{ nazara_name | default(inventory_hostname) }}"
+description = "{{ nazara_description | default('Managed by Ansible/Nazara') }}"
+# A comment left by Nazara if anything gets modified by it.
+comments = "{{ nazara_comments | default('Automatically registered by Nazara.') }}"
+# The current status of the device/VM.
+status = "{{ nazara_status | default('active') }}"
+
+# ---------------------------------------------------------------
+# Use [device] for devices, or [vm] if this is a virtual machine.
+# ---------------------------------------------------------------
+
+{% if nazara_type == "device" %}
+[device]
+device_type = {{ device_type }}
+role = {{ device_role }}
+site = {{ device_site }}
+{% elif nazara_type == "vm" %}
+[vm]
+cluster = {{ vm_cluster }}
+{% endif %}
